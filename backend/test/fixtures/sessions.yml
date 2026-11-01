@@ -1,0 +1,9 @@
+one:
+  user: one
+  token_digest: <%= Digest::SHA256.hexdigest("first-user-test-token") %>
+  expires_at: <%= 1.day.from_now.to_fs(:db) %>
+
+two:
+  user: two
+  token_digest: <%= Digest::SHA256.hexdigest("second-user-test-token") %>
+  expires_at: <%= 1.day.from_now.to_fs(:db) %>

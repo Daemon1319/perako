@@ -1,0 +1,14 @@
+one:
+  user: one
+  name: Food
+  transaction_type: expense
+
+two:
+  user: two
+  name: Transport
+  transaction_type: expense
+
+income:
+  user: one
+  name: Salary
+  transaction_type: income

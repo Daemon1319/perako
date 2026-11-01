@@ -1,0 +1,29 @@
+one:
+  user: one
+  category: one
+  amount: 150.00
+  date: 2026-11-01
+  description: Lunch
+  transaction_type: expense
+
+two:
+  user: two
+  category: two
+  amount: 30.00
+  date: 2026-11-01
+  description: Private fare
+  transaction_type: expense
+
+earlier:
+  user: one
+  amount: 10.00
+  date: 2026-10-01
+  description: Earlier expense
+  transaction_type: expense
+
+later:
+  user: one
+  amount: 20.00
+  date: 2026-12-01
+  description: Later expense
+  transaction_type: expense

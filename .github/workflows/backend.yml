@@ -1,0 +1,46 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main]
+    paths: ["backend/**", ".github/workflows/backend.yml"]
+  pull_request:
+    paths: ["backend/**", ".github/workflows/backend.yml"]
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: --health-cmd="pg_isready -U postgres" --health-interval=10s --health-timeout=5s --health-retries=5
+    env:
+      RAILS_ENV: test
+      FRONTEND_URL: https://frontend.example.test
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/backend_test
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          working-directory: backend
+          bundler-cache: true
+      - name: Check Ruby style
+        run: bundle exec rubocop
+      - name: Scan application security
+        run: bundle exec brakeman --quiet --no-pager --exit-on-warn --exit-on-error
+      - name: Audit dependencies
+        run: bundle exec bundler-audit check --update
+      - name: Prepare database and run tests
+        run: bundle exec rails db:prepare test
