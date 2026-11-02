@@ -17,6 +17,42 @@ export default function Sheet({ title, subtitle, children, onClose, onRequestClo
   }, [])
 
   useEffect(() => {
+    const dialog = ref.current
+    const viewport = window.visualViewport
+    if (!viewport) return
+    let frame
+    function update() {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        // Preserve normal pinch zoom. At normal scale, fit above the keyboard.
+        if (Math.abs(viewport.scale - 1) > 0.05) return
+        dialog.style.setProperty('--sheet-height', `${viewport.height * 0.9}px`)
+        dialog.style.setProperty('--sheet-bottom', `${Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop)}px`)
+        const focused = document.activeElement
+        const body = dialog.querySelector('.sheet-body')
+        if (!body?.contains(focused) || !focused.matches('input, select, textarea')) return
+        const fieldRect = focused.getBoundingClientRect()
+        const bodyRect = body.getBoundingClientRect()
+        if (fieldRect.bottom > bodyRect.bottom - 24) {
+          body.scrollTop += fieldRect.bottom - bodyRect.bottom + 24
+        } else if (fieldRect.top < bodyRect.top + 24) {
+          body.scrollTop -= bodyRect.top + 24 - fieldRect.top
+        }
+      })
+    }
+    update()
+    viewport.addEventListener('resize', update)
+    viewport.addEventListener('scroll', update)
+    dialog.addEventListener('focusin', update)
+    return () => {
+      cancelAnimationFrame(frame)
+      viewport.removeEventListener('resize', update)
+      viewport.removeEventListener('scroll', update)
+      dialog.removeEventListener('focusin', update)
+    }
+  }, [])
+
+  useEffect(() => {
     if (!closing) return
     // Fallback if the browser does not emit an animation event.
     const timer = setTimeout(onClose, 260)

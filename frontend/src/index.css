@@ -23,6 +23,7 @@ button, a { touch-action: manipulation; }
 input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; }
 input[type="date"], input[type="month"] { min-width: 0; }
+input, select, textarea { scroll-margin-block: 24px; }
 
 .app-shell, .auth-shell { position: relative; display: flex; flex-direction: column; width: 100%; max-width: 480px; min-height: 100dvh; margin: 0 auto; background: #fafaf6; box-shadow: 0 0 80px #183c2e08; }
 .brand-mark { display: inline-flex; align-items: center; justify-content: center; border-radius: 30%; color: #d9f4a0; background: #174f42; }
@@ -54,14 +55,14 @@ input[type="date"], input[type="month"] { min-width: 0; }
 .summary-compact > div + div { border-left: 1px solid #eeeee8; padding-left: 10px; }
 .period-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin: 0 -8px 15px; }
 .period-picker { position: relative; display: flex; align-items: center; gap: 6px; min-height: 40px; font-size: 13px; font-weight: 600; white-space: nowrap; }
-.period-picker input { position: absolute; inset: 0; opacity: 0; width: 100%; cursor: pointer; }
+.period-picker input { font-size: 16px; position: absolute; inset: 0; opacity: 0; width: 100%; cursor: pointer; }
 .period-picker:focus-within { outline: 2px solid #71af96; outline-offset: 3px; border-radius: 5px; }
 .all-time-button { border-radius: 8px; padding: 7px 11px; font-size: 11px; font-weight: 600; color: #6d7765; background: #ebeee2; white-space: nowrap; }
 .all-time-button.active { color: #1c6553; background: #dcece1; }
 .segmented { display: flex; gap: 4px; padding: 4px; border-radius: 11px; background: #eef0e7; }
 .segmented button { display: flex; flex: 1; align-items: center; justify-content: center; gap: 6px; min-height: 35px; padding: 6px 8px; border-radius: 8px; font-size: 12px; font-weight: 500; color: #7d8377; }
 .segmented button.active { color: #174f42; background: white; box-shadow: 0 1px 4px #2038220a; }
-.filter-select { width: 100%; appearance: none; min-height: 40px; padding: 8px 34px 8px 12px; border: 1px solid #e4e7dc; border-radius: 10px; background: transparent; color: #73796d; font-size: 12px; }
+.filter-select { width: 100%; appearance: none; min-height: 40px; padding: 8px 34px 8px 12px; border: 1px solid #e4e7dc; border-radius: 10px; background: transparent; color: #73796d; font-size: 16px; }
 .transaction-date { margin-top: 23px; margin-bottom: 7px; font-size: 10px; font-weight: 600; color: #9b9e95; letter-spacing: .025em; }
 .transaction-date:first-child { margin-top: 0; }
 .transaction-row { display: flex; align-items: center; gap: 11px; width: 100%; padding: 14px 0; border-bottom: 1px solid #edeee7; border-radius: 6px; }
@@ -73,7 +74,7 @@ input[type="date"], input[type="month"] { min-width: 0; }
 .empty-state h2, .empty-state h3 { font-size: 14px; font-weight: 600; color: #626c5d; }
 .empty-state p { max-width: 250px; margin-top: 7px; font-size: 12px; line-height: 1.8; color: #979d90; }
 .field-label { display: block; font-size: 12px; font-weight: 600; color: #586253; }
-.field { display: block; width: 100%; min-height: 49px; padding: 13px 14px; border: 1px solid #e1e5d9; border-radius: 11px; background: white; color: #26362a; font-size: 14px; font-weight: 400; transition: border-color .15s; }
+.field { display: block; width: 100%; min-height: 49px; padding: 13px 14px; border: 1px solid #e1e5d9; border-radius: 11px; background: white; color: #26362a; font-size: 16px; font-weight: 400; transition: border-color .15s; }
 .field::placeholder { color: #abb0a5; }
 .field:focus { outline: none; border-color: #619c80; box-shadow: 0 0 0 3px #619c8015; }
 .btn-primary, .btn-secondary, .btn-danger { display: flex; align-items: center; justify-content: center; gap: 9px; min-height: 48px; padding: 12px 18px; border-radius: 11px; font-size: 13px; font-weight: 600; transition: background .15s; }
@@ -89,11 +90,12 @@ input[type="date"], input[type="month"] { min-width: 0; }
 .auth-art-line { position: absolute; width: 220px; height: 220px; border: 1px solid #c4d1ad; border-radius: 50%; top: 10px; right: -80px; box-shadow: 0 0 0 21px #dde5cf, 0 0 0 22px #c4d1ad; }
 .auth-art-note { position: absolute; left: 150px; bottom: 33px; right: 20px; font-size: 14px; font-weight: 500; line-height: 1.6; color: #67804f; letter-spacing: -.02em; }
 .auth-art-dot { position: absolute; left: 112px; top: 30px; width: 18px; height: 18px; background: #b7d984; border: 4px solid #e9efdd; border-radius: 50%; }
-.sheet { position: fixed; inset: auto 0 0; margin: 0 auto; padding: 0; border: 0; border-radius: 25px 25px 0 0; width: min(100%,480px); max-width: 480px; max-height: 90dvh; background: #fffefa; color: #26352b; overflow: hidden; box-shadow: 0 -10px 60px #14302126; }
+.sheet { position: fixed; inset: auto 0 0; margin: 0 auto; padding: 0; border: 0; border-radius: 25px 25px 0 0; width: min(100%,480px); max-width: 480px; max-height: var(--sheet-height, 90dvh); bottom: var(--sheet-bottom, 0px); background: #fffefa; color: #26352b; overflow: hidden; box-shadow: 0 -10px 60px #14302126; }
 .sheet[open] { display: flex; flex-direction: column; }
 .sheet::backdrop { background: #162d2565; backdrop-filter: blur(3px); }
 .sheet-handle { flex-shrink: 0; width: 33px; height: 4px; margin: 12px auto; border-radius: 4px; background: #e0e3d8; }
-.sheet-body { padding: 0 24px max(24px,env(safe-area-inset-bottom)); overflow-y: auto; overscroll-behavior: contain; }
+.sheet > header { flex-shrink: 0; }
+.sheet-body { min-height: 0; scroll-padding-block: 24px; padding: 0 24px max(24px,env(safe-area-inset-bottom)); overflow-y: auto; overscroll-behavior: contain; }
 .amount-entry { margin-bottom: 23px; padding: 20px; border: 1px solid #e8ebdf; border-radius: 16px; background: #f6f8ef; }
 .type-pill { display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border-radius: 6px; font-size: 10px; font-weight: 600; }
 .amount-input { width: 100%; min-width: 0; outline: none; background: transparent; color: #244c38; font-size: 36px; line-height: 1.3; font-weight: 600; letter-spacing: -.04em; }
