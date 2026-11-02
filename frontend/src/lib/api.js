@@ -1,5 +1,9 @@
+import { createBackendReadiness } from './backendReadiness.js'
+
 const TOKEN_KEY = 'perako.session'
-const API_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
+const API_URL = (import.meta.env?.VITE_API_URL || '/api').replace(/\/$/, '')
+
+const readiness = createBackendReadiness(API_URL)
 
 export function getToken() {
   return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY)
@@ -18,10 +22,12 @@ export function clearToken() {
 
 export async function api(path, { method = 'GET', body, signal } = {}) {
   const token = getToken()
+  method = method.toUpperCase()
   let response
 
   try {
-    response = await fetch(`${API_URL}${path}`, {
+    await readiness.wait(signal)
+    const request = () => fetch(`${API_URL}${path}`, {
       method,
       signal,
       headers: {
@@ -31,8 +37,26 @@ export async function api(path, { method = 'GET', body, signal } = {}) {
       },
       ...(body ? { body: JSON.stringify(body) } : {}),
     })
+    // Only reads may be retried. A failed write may already have reached Rails.
+    for (let attempt = 0; ; attempt += 1) {
+      try {
+        response = await request()
+        if (![502, 503, 504].includes(response.status)) {
+          readiness.markActive()
+          break
+        }
+        readiness.invalidate()
+        if (method !== 'GET' || attempt >= 1) break
+        await response.body?.cancel()
+      } catch (error) {
+        if (signal?.aborted || error.name === 'AbortError') throw error
+        readiness.invalidate()
+        if (method !== 'GET' || attempt >= 1) throw error
+      }
+      await readiness.wait(signal)
+    }
   } catch (error) {
-    if (error.name === 'AbortError') throw error
+    if (signal?.aborted || error.name === 'AbortError') throw error
     throw new Error('Unable to connect to Perako. Please try again.', { cause: error })
   }
 
