@@ -51,6 +51,6 @@ end
 
 gem "dotenv-rails", "~> 3.2", groups: [ :development, :test ]
 
-gem "fiddle", "~> 1.1"
+gem "fiddle", "~> 1.1", platforms: :windows
 
 gem "rack-cors", "~> 3.0"
