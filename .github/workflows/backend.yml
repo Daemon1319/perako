@@ -71,7 +71,7 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       - name: Sign in to the container registry
-        run: az acr login --name "$REGISTRY_NAME"
+        run: az acr login --name "$REGISTRY_NAME" --resource-group "$RESOURCE_GROUP"
       - name: Build and push the backend image
         run: |
           image="$REGISTRY_SERVER/perako-api:$GITHUB_SHA"
