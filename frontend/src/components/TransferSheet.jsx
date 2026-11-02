@@ -41,7 +41,7 @@ export default function TransferSheet({ transfer, wallets, loading, loadError, c
         <label className="field-label">Amount<input className="field mt-2" type="number" inputMode="decimal" name="amount" min="0.01" max="9999999999.99" step="0.01" required value={fields.amount} onChange={change} /></label>
         <label className="field-label">Transfer fee (optional)<input className="field mt-2" type="number" inputMode="decimal" name="fee" min="0" max="9999999999.99" step="0.01" placeholder="0.00" value={fields.fee} onChange={change} /></label>
         <p className="text-xs leading-5 text-stone-500">The fee is recorded as an expense. Only the transferred amount reaches the destination.</p>
-        <label className="field-label">Date<input className="field mt-2" type="date" name="date" required value={fields.date} onChange={change} /></label>
+        <label className="field-label">Date<input className="field mt-2" type="date" name="date" max={today()} required value={fields.date} onChange={change} /></label>
         <label className="field-label">Description (optional)<textarea className="field mt-2" name="description" value={fields.description} onChange={change} /></label>
         <button type="submit" className="btn-primary w-full" disabled={wallets.length < 2}>{busy ? <Spinner /> : 'Save transfer'}</button>
       </fieldset>}

@@ -6,6 +6,7 @@ class Transaction < ApplicationRecord
 
   validates :amount, numericality: { greater_than: 0, less_than_or_equal_to: BigDecimal("9999999999.99") }
   validates :date, presence: true
+  validates :date, comparison: { less_than_or_equal_to: -> { Date.current } }, allow_nil: true
   validates :transaction_type, inclusion: { in: %w[income expense] }
   validates :category, presence: true, if: -> { category_id.present? }
 

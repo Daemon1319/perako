@@ -118,6 +118,21 @@ class TransactionsControllerTest < ActionDispatch::IntegrationTest
     assert_response :unauthorized
   end
 
+  test "future income and expenses cannot be created or assigned through the API" do
+    %w[income expense].each do |type|
+      assert_no_difference "Transaction.count" do
+        post "/transactions", params: { transaction: valid_attributes.merge(
+          date: Date.current + 1.day, transaction_type: type) }, headers: @headers, as: :json
+      end
+      assert_response :unprocessable_entity
+    end
+    transaction = transactions(:one)
+    previous_date = transaction.date
+    patch "/transactions/#{transaction.id}", params: { transaction: { date: Date.current + 1.day } }, headers: @headers, as: :json
+    assert_response :unprocessable_entity
+    assert_equal previous_date, transaction.reload.date
+  end
+
   private
 
   def valid_attributes

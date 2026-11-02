@@ -84,7 +84,7 @@ export default function TransactionSheet({ wallets, walletsLoading, walletsError
               {walletsError && <span className="mt-2 block text-xs text-rose-600">{walletsError}</span>}
               {!walletsLoading && !walletsError && !wallets.length && <span className="mt-2 block text-xs text-stone-500">Create a wallet from the menu first.</span>}
             </label>
-            <label className="field-label">Date<input className="field mt-2" name="date" type="date" required value={fields.date} onChange={change} /></label>
+            <label className="field-label">Date<input className="field mt-2" name="date" type="date" max={today()} required value={fields.date} onChange={change} /></label>
             <label className="field-label">Category <span className="font-normal text-stone-400">· optional</span>
               <div className="relative mt-2">
                 <select className="field appearance-none pr-10" name="category_id" value={fields.category_id} onChange={change} disabled={categoriesLoading || Boolean(categoriesError)}>
