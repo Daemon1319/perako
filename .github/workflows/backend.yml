@@ -1,4 +1,4 @@
-name: Backend CI
+name: Backend CI and deploy
 
 on:
   push:
@@ -44,3 +44,56 @@ jobs:
         run: bundle exec bundler-audit check --update
       - name: Prepare database and run tests
         run: bundle exec rails db:prepare test
+
+  deploy:
+    name: Deploy backend to Azure
+    needs: checks
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+    concurrency:
+      group: perako-backend-production
+      cancel-in-progress: false
+    env:
+      REGISTRY_NAME: perako1319
+      REGISTRY_SERVER: perako1319-h5f3h6h4azg6f4c5.azurecr.io
+      RESOURCE_GROUP: perako-rg
+      CONTAINER_APP: perako-api
+    steps:
+      - uses: actions/checkout@v6
+      - name: Sign in to Azure with OIDC
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Sign in to the container registry
+        run: az acr login --name "$REGISTRY_NAME"
+      - name: Build and push the backend image
+        run: |
+          image="$REGISTRY_SERVER/perako-api:$GITHUB_SHA"
+          docker build --tag "$image" .
+          docker push "$image"
+      - name: Deploy the image
+        run: |
+          az extension add --name containerapp --upgrade --yes
+          az containerapp update \
+            --name "$CONTAINER_APP" \
+            --resource-group "$RESOURCE_GROUP" \
+            --container-name perako-api \
+            --image "$REGISTRY_SERVER/perako-api:$GITHUB_SHA" \
+            --output none
+      - name: Check backend health
+        run: |
+          app_host=$(az containerapp show \
+            --name "$CONTAINER_APP" \
+            --resource-group "$RESOURCE_GROUP" \
+            --query properties.configuration.ingress.fqdn --output tsv)
+          test -n "$app_host"
+          curl --fail --silent --show-error \
+            --retry 20 --retry-delay 10 --retry-all-errors \
+            --connect-timeout 10 --max-time 20 \
+            "https://$app_host/up"
