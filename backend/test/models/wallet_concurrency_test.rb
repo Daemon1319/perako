@@ -9,16 +9,23 @@ class WalletConcurrencyTest < ActiveSupport::TestCase
       wallet = user.wallets.create!(name: "Cash")
       income = user.transactions.new(wallet: wallet, amount: 100, date: Date.current, transaction_type: "income")
       assert WalletTransaction.call(user, income)
+      destination = user.wallets.create!(name: "Destination")
       ready = Queue.new
       start = Queue.new
-      workers = 2.times.map do
+      workers = 2.times.map do |index|
         Thread.new do
           ActiveRecord::Base.connection_pool.with_connection do
             owner = User.find(user.id)
             expense = owner.transactions.new(wallet_id: wallet.id, amount: 80, date: Date.current, transaction_type: "expense")
             ready << true
             start.pop
-            WalletTransaction.call(owner, expense)
+            if index.zero?
+              transfer = owner.transfers.new(source_wallet_id: wallet.id, destination_wallet_id: destination.id,
+                amount: 80, fee: 0, date: Date.current)
+              WalletTransfer.call(owner, transfer)
+            else
+              WalletTransaction.call(owner, expense)
+            end
           end
         end
       end

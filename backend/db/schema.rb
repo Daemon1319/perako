@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_02_040000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_02_050000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -43,9 +43,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_02_040000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "wallet_id", null: false
+    t.bigint "transfer_id"
     t.index ["category_id"], name: "index_transactions_on_category_id"
+    t.index ["transfer_id"], name: "index_transactions_on_transfer_id", unique: true
     t.index ["user_id"], name: "index_transactions_on_user_id"
     t.index ["wallet_id"], name: "index_transactions_on_wallet_id"
+  end
+
+  create_table "transfers", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "source_wallet_id", null: false
+    t.bigint "destination_wallet_id", null: false
+    t.decimal "amount", precision: 12, scale: 2, null: false
+    t.decimal "fee", precision: 12, scale: 2, default: "0.0", null: false
+    t.date "date", null: false
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["destination_wallet_id"], name: "index_transfers_on_destination_wallet_id"
+    t.index ["source_wallet_id"], name: "index_transfers_on_source_wallet_id"
+    t.index ["user_id"], name: "index_transfers_on_user_id"
+    t.check_constraint "amount > 0::numeric AND fee >= 0::numeric", name: "transfers_positive_amount"
+    t.check_constraint "source_wallet_id <> destination_wallet_id", name: "transfers_distinct_wallets"
   end
 
   create_table "users", force: :cascade do |t|
@@ -69,7 +88,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_02_040000) do
   add_foreign_key "categories", "users"
   add_foreign_key "sessions", "users"
   add_foreign_key "transactions", "categories", on_delete: :nullify
+  add_foreign_key "transactions", "transfers"
   add_foreign_key "transactions", "users"
   add_foreign_key "transactions", "wallets"
+  add_foreign_key "transfers", "users"
+  add_foreign_key "transfers", "wallets", column: "destination_wallet_id"
+  add_foreign_key "transfers", "wallets", column: "source_wallet_id"
   add_foreign_key "wallets", "users"
 end

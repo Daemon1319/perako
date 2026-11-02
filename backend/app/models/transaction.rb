@@ -1,6 +1,7 @@
 class Transaction < ApplicationRecord
   belongs_to :user
   belongs_to :wallet
+  belongs_to :transfer, optional: true
   belongs_to :category, optional: true
 
   validates :amount, numericality: { greater_than: 0, less_than_or_equal_to: BigDecimal("9999999999.99") }

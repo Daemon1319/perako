@@ -2,10 +2,11 @@ import { Fragment, useState } from 'react'
 import { ArrowDownLeft, ArrowUpRight, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, ReceiptText } from 'lucide-react'
 import { useResource } from '../hooks/useResource'
 import { dateLabel, money, monthLabel, monthRange, shiftMonth, today } from '../lib/format'
+import TransfersList from '../components/TransfersList'
 import SummaryCards from '../components/SummaryCards'
 import { ErrorState } from '../components/Feedback'
 
-export default function TransactionsPage({ wallets, categories, categoriesLoading, revision, onEdit, onRetry }) {
+export default function TransactionsPage({ onTransfer, wallets, categories, categoriesLoading, revision, onEdit, onRetry }) {
   const currentMonth = today().slice(0, 7)
   const [selectedMonth, setMonth] = useState(currentMonth)
   const month = selectedMonth > currentMonth ? currentMonth : selectedMonth
@@ -54,19 +55,20 @@ export default function TransactionsPage({ wallets, categories, categoriesLoadin
       {summary.error ? <ErrorState error={summary.error} onRetry={onRetry} /> : <SummaryCards summary={summary.data} loading={summary.loading} compact />}
       <p className="mb-6 mt-2 text-[10px] text-stone-400">Totals for {allTime ? 'all time' : monthLabel(month)} · before list filters</p>
 
-      <div className="segmented mb-3" aria-label="Transaction type">
-        {[['', 'All'], ['income', 'Income'], ['expense', 'Expenses']].map(([value, label]) => <button key={value} type="button" aria-pressed={type === value} className={type === value ? 'active' : ''} onClick={() => { setType(value); setCategoryId(''); setPage(1) }}>{label}</button>)}
+      <div className="segmented mb-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }} aria-label="Transaction type">
+        {[['', 'All'], ['income', 'Income'], ['expense', 'Expenses'], ['transfers', 'Transfers']].map(([value, label]) => <button key={value} type="button" aria-pressed={type === value} className={type === value ? 'active' : ''} onClick={() => { setType(value); setCategoryId(''); setPage(1) }}>{label}</button>)}
       </div>
 
       <label className="mb-3 block"><span className="sr-only">Filter by wallet</span><select className="filter-select" value={walletId} onChange={(event) => { setWalletId(event.target.value); setPage(1) }}><option value="">All wallets</option>{wallets.map((wallet) => <option key={wallet.id} value={wallet.id}>{wallet.name}</option>)}</select></label>
-      <div className="relative mb-6">
+      {type !== 'transfers' && <div className="relative mb-6">
         <select className="filter-select" aria-label="Filter by category" value={selectedCategory} onChange={(event) => { setCategoryId(event.target.value); setPage(1) }}>
           <option value="">All categories</option>
           {categoryOptions.map((category) => <option key={category.id} value={category.id}>{category.name}{!type ? ` · ${category.transaction_type}` : ''}</option>)}
         </select>
         <ChevronDown size={15} className="pointer-events-none absolute right-3 top-3 text-stone-400" />
-      </div>
+      </div>}
 
+      {type === 'transfers' ? <TransfersList key={`${month}-${allTime}-${walletId}`} month={month} allTime={allTime} walletId={walletId} revision={revision} wallets={wallets} onOpen={onTransfer} onRetry={onRetry} /> : <>
       {resource.error ? <ErrorState error={resource.error} onRetry={onRetry} /> : resource.loading ? (
         <div className="space-y-5" aria-label="Loading transactions" aria-busy="true">{[1, 2, 3, 4].map((item) => <div className="flex items-center gap-3" key={item}><div className="skeleton size-11 rounded-2xl" /><div className="flex-1 space-y-2"><div className="skeleton h-3 w-3/5" /><div className="skeleton h-2.5 w-1/3" /></div></div>)}</div>
       ) : transactions.length ? (
@@ -102,6 +104,7 @@ export default function TransactionsPage({ wallets, categories, categoriesLoadin
           </div>
         </div>
       )}
+      </>}
     </section>
   )
 }

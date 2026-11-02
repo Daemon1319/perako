@@ -30,7 +30,7 @@ class TransactionsController < ApplicationController
 
     render json: {
       transactions: transactions.as_json(
-        only: [ :id, :amount, :date, :description, :transaction_type, :category_id, :wallet_id ]),
+        only: [ :id, :amount, :date, :description, :transaction_type, :category_id, :wallet_id, :transfer_id ]),
       pagination: {
         page: page,
         per_page: per_page,
@@ -44,7 +44,7 @@ class TransactionsController < ApplicationController
     transaction = current_user.transactions.new(transaction_params)
 
     if WalletTransaction.call(current_user, transaction)
-      render json: transaction.as_json(only: [ :id, :amount, :date, :description, :transaction_type, :category_id, :wallet_id ]), status: :created
+      render json: transaction.as_json(only: [ :id, :amount, :date, :description, :transaction_type, :category_id, :wallet_id, :transfer_id ]), status: :created
     else
       render json: { errors: transaction.errors.full_messages }, status: :unprocessable_entity
     end
@@ -54,7 +54,7 @@ class TransactionsController < ApplicationController
     transaction = current_user.transactions.find(params[:id])
 
     if WalletTransaction.call(current_user, transaction, transaction_params)
-      render json: transaction.as_json(only: [ :id, :amount, :date, :description, :transaction_type, :category_id, :wallet_id ])
+      render json: transaction.as_json(only: [ :id, :amount, :date, :description, :transaction_type, :category_id, :wallet_id, :transfer_id ])
     else
       render json: { errors: transaction.errors.full_messages }, status: :unprocessable_entity
     end

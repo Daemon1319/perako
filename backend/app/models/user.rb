@@ -3,6 +3,7 @@ class User < ApplicationRecord
 
   has_many :sessions, dependent: :destroy
   has_many :categories, dependent: :destroy
+  has_many :transfers, dependent: :destroy
   has_many :transactions, dependent: :destroy
   has_many :wallets, dependent: :destroy
 

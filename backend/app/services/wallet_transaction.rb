@@ -3,6 +3,10 @@ class WalletTransaction
   def self.call(user, record, attributes = {}, destroy: false)
     user.with_lock do
       record.reload if record.persisted?
+      if record.transfer_id.present?
+        record.errors.add(:base, "Transfer fees must be managed through the transfer")
+        raise ActiveRecord::RecordInvalid, record
+      end
       old_wallet_id = record.wallet_id
       record.assign_attributes(attributes) unless destroy
       if destroy
