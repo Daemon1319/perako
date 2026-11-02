@@ -6,7 +6,7 @@ class SessionsController < ApplicationController
     with: -> { render json: { error: "Too many login attempts. Try again later." }, status: :too_many_requests }
 
   def create
-    credentials = params.require(:session).permit(:email, :password)
+    credentials = params.require(:session).permit(:email, :password, :remember_me)
 
     user = User.authenticate_by(email: credentials[:email], password: credentials[:password])
 
@@ -19,7 +19,7 @@ class SessionsController < ApplicationController
 
     session = user.sessions.create!(
       token_digest: Digest::SHA256.hexdigest(token),
-      expires_at: 7.days.from_now
+      expires_at: (ActiveModel::Type::Boolean.new.cast(credentials[:remember_me]) ? 30.days : 7.days).from_now
     )
 
     render json: { token: token, expires_at: session.expires_at, user: user.as_json(only: [ :id, :name, :email ]) }, status: :created

@@ -11,6 +11,7 @@ export default function AuthPage() {
   const [mode, setMode] = useState('login')
   const [fields, setFields] = useState({ name: '', email: '', password: '', password_confirmation: '' })
   const [visible, setVisible] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
@@ -45,7 +46,7 @@ export default function AuthPage() {
         setFields({ ...fields, password: '', password_confirmation: '' })
         setMessage('Your account is ready. Sign in to start tracking.')
       } else {
-        await login(fields.email.trim(), fields.password)
+        await login(fields.email.trim(), fields.password, rememberMe)
       }
     } catch (error) {
       setError(error.message)
@@ -88,6 +89,12 @@ export default function AuthPage() {
             </div>
           </label>
           {signup && <label className="field-label">Confirm password<input className="field mt-2" name="password_confirmation" type={visible ? 'text' : 'password'} placeholder="Enter your password again" autoComplete="new-password" required value={fields.password_confirmation} onChange={change} disabled={busy} /></label>}
+          {!signup && (
+            <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-stone-600">
+              <input type="checkbox" className="size-4 accent-teal-700" checked={rememberMe} onChange={(event) => setRememberMe(event.target.checked)} disabled={busy} />
+              Remember me for 30 days
+            </label>
+          )}
           <button className="btn-primary mt-2 w-full" disabled={busy} type="submit">{busy ? <Spinner /> : <>{signup ? 'Create account' : 'Sign in'}<ArrowRight size={18} /></>}</button>
         </form>
 

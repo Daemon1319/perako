@@ -30,9 +30,9 @@ export default function AuthProvider({ children }) {
     return () => controller.abort()
   }, [attempt])
 
-  async function login(email, password) {
-    const data = await api('/login', { method: 'POST', body: { session: { email, password } } })
-    setToken(data.token)
+  async function login(email, password, rememberMe = false) {
+    const data = await api('/login', { method: 'POST', body: { session: { email, password, remember_me: rememberMe } } })
+    setToken(data.token, rememberMe)
     setSession({ user: data.user, loading: false, error: null })
   }
 

@@ -2,14 +2,17 @@ const TOKEN_KEY = 'perako.session'
 const API_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
 
 export function getToken() {
-  return sessionStorage.getItem(TOKEN_KEY)
+  return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY)
 }
 
-export function setToken(token) {
-  sessionStorage.setItem(TOKEN_KEY, token)
+export function setToken(token, rememberMe = false) {
+  clearToken()
+  const storage = rememberMe ? localStorage : sessionStorage
+  storage.setItem(TOKEN_KEY, token)
 }
 
 export function clearToken() {
+  localStorage.removeItem(TOKEN_KEY)
   sessionStorage.removeItem(TOKEN_KEY)
 }
 

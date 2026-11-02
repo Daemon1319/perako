@@ -21,6 +21,20 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_response :unauthorized
   end
 
+  test "remembered sessions last 30 days while other sessions last 7 days" do
+    freeze_time do
+      [ [ true, 30.days ], [ false, 7.days ], [ "false", 7.days ] ].each do |remember_me, lifetime|
+        post "/login", params: { session: {
+          email: "first@example.com", password: "LearningRails123!", remember_me: remember_me
+        } }, as: :json
+        assert_response :created
+        token = response.parsed_body.fetch("token")
+        session = Session.find_by!(token_digest: Digest::SHA256.hexdigest(token))
+        assert_equal lifetime.from_now, session.expires_at
+      end
+    end
+  end
+
   test "wrong passwords do not create sessions" do
     assert_no_difference "Session.count" do
       post "/login", params: { session: { email: "first@example.com", password: "wrong-password" } }, as: :json
