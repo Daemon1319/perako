@@ -2,6 +2,7 @@ require "test_helper"
 
 class TransactionsControllerTest < ActionDispatch::IntegrationTest
   setup do
+    users(:one).transactions.create!(wallet: wallets(:one), amount: "9999999999.99", date: "1900-01-01", transaction_type: "income")
     @headers = { "Authorization" => "Bearer first-user-test-token" }
   end
 
@@ -68,7 +69,7 @@ class TransactionsControllerTest < ActionDispatch::IntegrationTest
   test "end date alone excludes later transactions" do
     get "/transactions", params: { end_date: "2026-11-01" }, headers: @headers
     assert_response :ok
-    assert_equal [ transactions(:one).id, transactions(:earlier).id ].sort, returned_ids.sort
+    assert_equal users(:one).transactions.where(date: ..Date.new(2026, 11, 1)).ids.sort, returned_ids.sort
   end
 
   test "both date boundaries are inclusive" do
@@ -98,7 +99,7 @@ class TransactionsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "the largest supported amount can be saved" do
-    post "/transactions", params: { transaction: valid_attributes.merge(amount: "9999999999.99") }, headers: @headers, as: :json
+    post "/transactions", params: { transaction: valid_attributes.merge(amount: "9999999999.99", transaction_type: "income") }, headers: @headers, as: :json
     assert_response :created
     assert_equal BigDecimal("9999999999.99"), Transaction.find(response.parsed_body.fetch("id")).amount
   end
@@ -108,7 +109,7 @@ class TransactionsControllerTest < ActionDispatch::IntegrationTest
     get "/transactions", params: { page: 1 }, headers: @headers
     assert_response :ok
     assert_equal 10, returned_ids.size
-    assert_equal 14, response.parsed_body.dig("pagination", "total_count")
+    assert_equal 15, response.parsed_body.dig("pagination", "total_count")
     assert_equal 2, response.parsed_body.dig("pagination", "total_pages")
   end
 
@@ -120,7 +121,7 @@ class TransactionsControllerTest < ActionDispatch::IntegrationTest
   private
 
   def valid_attributes
-    { amount: "50.00", date: "2026-11-01", transaction_type: "expense" }
+    { wallet_id: wallets(:one).id, amount: "50.00", date: "2026-11-01", transaction_type: "expense" }
   end
 
   def returned_ids

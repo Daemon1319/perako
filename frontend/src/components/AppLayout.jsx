@@ -4,7 +4,7 @@ import { ArrowDownLeft, ArrowUpRight, Check, ChevronRight, FolderOpen, Home, Lis
 import { useAuth } from '../hooks/useAuth'
 import Brand from './Brand'
 
-export default function AppLayout({ children, onAdd, onCategories, toast }) {
+export default function AppLayout({ children, onAdd, onCategories, onWallets, toast }) {
   const { user, logout } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
@@ -55,6 +55,7 @@ export default function AppLayout({ children, onAdd, onCategories, toast }) {
               <div className="account-menu" id="account-menu">
                 <p className="truncate border-b border-stone-100 px-4 py-3 text-xs text-stone-500">{user.email}</p>
                 <button type="button" onClick={() => { setMenuOpen(false); onCategories() }}><FolderOpen size={17} /> Categories <ChevronRight size={15} className="ml-auto text-stone-400" /></button>
+                <button type="button" onClick={() => { setMenuOpen(false); onWallets() }}><FolderOpen size={17} /> Manage wallets <ChevronRight size={15} className="ml-auto text-stone-400" /></button>
                 <button type="button" disabled={loggingOut} onClick={handleLogout}><LogOut size={17} /> {loggingOut ? 'Signing out…' : 'Log out'}</button>
               </div>
             )}

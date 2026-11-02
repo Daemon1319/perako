@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import { ArrowDownLeft, ArrowUpRight, ChevronDown, Trash2 } from 'lucide-react'
 import { api } from '../lib/api'
-import { today } from '../lib/format'
+import { money, today } from '../lib/format'
 import Sheet from './Sheet'
 import { ErrorNotice, Spinner } from './Feedback'
 
-export default function TransactionSheet({ type, transaction, categories, categoriesLoading, categoriesError, onClose, onRequestClose, closing, onSaved }) {
+export default function TransactionSheet({ wallets, walletsLoading, walletsError, type, transaction, categories, categoriesLoading, categoriesError, onClose, onRequestClose, closing, onSaved }) {
   const editing = Boolean(transaction)
   const income = type === 'income'
   const [fields, setFields] = useState(() => ({
     amount: transaction?.amount || '',
+    wallet_id: transaction?.wallet_id ? String(transaction.wallet_id) : wallets.length === 1 ? String(wallets[0].id) : '',
     date: transaction?.date || today(),
     category_id: transaction?.category_id ? String(transaction.category_id) : '',
     description: transaction?.description || '',
@@ -74,6 +75,15 @@ export default function TransactionSheet({ type, transaction, categories, catego
           </div>
 
           <div className="space-y-5 pb-3">
+            <label className="field-label">Wallet
+              <select className="field mt-2" name="wallet_id" required value={fields.wallet_id} onChange={change} disabled={walletsLoading || Boolean(walletsError)}>
+                <option value="">Choose a wallet</option>
+                {wallets.map((wallet) => <option key={wallet.id} value={wallet.id}>{wallet.name} · {money(wallet.balance)}</option>)}
+              </select>
+              {walletsLoading && <span className="mt-2 block text-xs text-stone-500">Loading wallets…</span>}
+              {walletsError && <span className="mt-2 block text-xs text-rose-600">{walletsError}</span>}
+              {!walletsLoading && !walletsError && !wallets.length && <span className="mt-2 block text-xs text-stone-500">Create a wallet from the menu first.</span>}
+            </label>
             <label className="field-label">Date<input className="field mt-2" name="date" type="date" required value={fields.date} onChange={change} /></label>
             <label className="field-label">Category <span className="font-normal text-stone-400">· optional</span>
               <div className="relative mt-2">
@@ -89,7 +99,7 @@ export default function TransactionSheet({ type, transaction, categories, catego
             <label className="field-label">Description <span className="font-normal text-stone-400">· optional</span><textarea className="field mt-2 min-h-24 resize-y" name="description" placeholder={income ? 'Where did it come from?' : 'What was it for?'} rows={3} value={fields.description} onChange={change} /></label>
           </div>
 
-          <button className="btn-primary mt-4 w-full" type="submit">{busy ? <Spinner /> : editing ? 'Save changes' : `Save ${type}`}</button>
+          <button className="btn-primary mt-4 w-full" type="submit" disabled={walletsLoading || Boolean(walletsError) || !wallets.length}>{busy ? <Spinner /> : editing ? 'Save changes' : `Save ${type}`}</button>
           {editing && !confirmDelete && <button type="button" className="mx-auto mt-4 flex items-center gap-2 px-3 py-2 text-sm font-medium text-rose-600" onClick={() => setConfirmDelete(true)}><Trash2 size={15} /> Delete transaction</button>}
           {confirmDelete && (
             <div className="mt-4 rounded-2xl border border-rose-100 bg-rose-50 p-4">

@@ -5,18 +5,20 @@ import { dateLabel, money, monthLabel, monthRange, shiftMonth, today } from '../
 import SummaryCards from '../components/SummaryCards'
 import { ErrorState } from '../components/Feedback'
 
-export default function TransactionsPage({ categories, categoriesLoading, revision, onEdit, onRetry }) {
+export default function TransactionsPage({ wallets, categories, categoriesLoading, revision, onEdit, onRetry }) {
   const currentMonth = today().slice(0, 7)
   const [selectedMonth, setMonth] = useState(currentMonth)
   const month = selectedMonth > currentMonth ? currentMonth : selectedMonth
   const [allTime, setAllTime] = useState(false)
   const [type, setType] = useState('')
   const [categoryId, setCategoryId] = useState('')
+  const [walletId, setWalletId] = useState('')
   const [page, setPage] = useState(1)
   const categoryOptions = categories.filter((category) => !type || category.transaction_type === type)
   const selectedCategory = categoryOptions.some((category) => String(category.id) === categoryId) ? categoryId : ''
   const params = new URLSearchParams({ page })
   if (!allTime) Object.entries(monthRange(month)).forEach(([key, value]) => params.set(key, value))
+  if (walletId) params.set('wallet_id', walletId)
   if (type) params.set('transaction_type', type)
   if (selectedCategory) params.set('category_id', selectedCategory)
 
@@ -56,6 +58,7 @@ export default function TransactionsPage({ categories, categoriesLoading, revisi
         {[['', 'All'], ['income', 'Income'], ['expense', 'Expenses']].map(([value, label]) => <button key={value} type="button" aria-pressed={type === value} className={type === value ? 'active' : ''} onClick={() => { setType(value); setCategoryId(''); setPage(1) }}>{label}</button>)}
       </div>
 
+      <label className="mb-3 block"><span className="sr-only">Filter by wallet</span><select className="filter-select" value={walletId} onChange={(event) => { setWalletId(event.target.value); setPage(1) }}><option value="">All wallets</option>{wallets.map((wallet) => <option key={wallet.id} value={wallet.id}>{wallet.name}</option>)}</select></label>
       <div className="relative mb-6">
         <select className="filter-select" aria-label="Filter by category" value={selectedCategory} onChange={(event) => { setCategoryId(event.target.value); setPage(1) }}>
           <option value="">All categories</option>
@@ -77,7 +80,7 @@ export default function TransactionsPage({ categories, categoriesLoading, revisi
                 {(index === 0 || transactions[index - 1].date !== transaction.date) && <h2 className="transaction-date">{dateLabel(transaction.date)}</h2>}
                 <button type="button" className="transaction-row" style={{ '--row-index': index }} onClick={() => onEdit(transaction, () => setPage(1))}>
                   <span className={`transaction-icon ${income ? 'bg-teal-50 text-teal-700' : 'bg-orange-50 text-orange-700'}`}><Icon size={20} /></span>
-                  <span className="min-w-0 flex-1 text-left"><span className="block truncate text-sm font-medium text-stone-800">{transaction.description || category?.name || (income ? 'Income' : 'Expense')}</span><span className="mt-1 block truncate text-xs text-stone-400">{transaction.category_id ? category?.name || (categoriesLoading ? 'Loading category…' : 'Category unavailable') : 'Uncategorized'}</span></span>
+                  <span className="min-w-0 flex-1 text-left"><span className="block truncate text-sm font-medium text-stone-800">{transaction.description || category?.name || (income ? 'Income' : 'Expense')}</span><span className="mt-1 block truncate text-xs text-stone-400">{transaction.category_id ? category?.name || (categoriesLoading ? 'Loading category…' : 'Category unavailable') : 'Uncategorized'} · {wallets.find((wallet) => wallet.id === transaction.wallet_id)?.name || 'Wallet'}</span></span>
                   <span className={`shrink-0 text-right text-[13px] font-semibold tabular-nums ${income ? 'text-teal-700' : 'text-stone-800'}`}>{income ? '+' : '−'}{money(transaction.amount)}</span>
                   <ChevronRight size={14} className="shrink-0 text-stone-300" />
                 </button>

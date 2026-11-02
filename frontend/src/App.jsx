@@ -7,6 +7,7 @@ import AppLayout from './components/AppLayout'
 import Brand from './components/Brand'
 import CategoriesSheet from './components/CategoriesSheet'
 import TransactionSheet from './components/TransactionSheet'
+import WalletsSheet from './components/WalletsSheet'
 import { ErrorState, Spinner } from './components/Feedback'
 import AuthPage from './pages/AuthPage'
 import HomePage from './pages/HomePage'
@@ -17,6 +18,7 @@ function Workspace() {
   const [panel, setPanel] = useState(null)
   const [toast, setToast] = useState(null)
   const categories = useResource('/categories', revision)
+  const wallets = useResource('/wallets', revision)
   const closePanel = useCallback(() => setPanel(null), [])
 
   function requestPanelClose() {
@@ -35,6 +37,11 @@ function Workspace() {
   }
 
   function add(type) {
+    if (!wallets.loading && !wallets.error && !wallets.data?.length) {
+      setToast('Create a wallet first, then add income to fund it.')
+      setPanel({ kind: 'wallets' })
+      return
+    }
     setPanel({ kind: 'transaction', type })
   }
 
@@ -43,14 +50,15 @@ function Workspace() {
   }
 
   return (
-    <AppLayout onAdd={add} onCategories={() => setPanel({ kind: 'categories' })} toast={toast}>
+    <AppLayout onWallets={() => setPanel({ kind: 'wallets' })} onAdd={add} onCategories={() => setPanel({ kind: 'categories' })} toast={toast}>
       <Routes>
-        <Route path="/" element={<HomePage revision={revision} onRetry={() => refresh()} />} />
-        <Route path="/transactions" element={<TransactionsPage categories={categories.data || []} categoriesLoading={categories.loading} revision={revision} onEdit={edit} onRetry={() => refresh()} />} />
+        <Route path="/" element={<HomePage wallets={wallets} onWallets={() => setPanel({ kind: 'wallets' })} revision={revision} onRetry={() => refresh()} />} />
+        <Route path="/transactions" element={<TransactionsPage wallets={wallets.data || []} categories={categories.data || []} categoriesLoading={categories.loading} revision={revision} onEdit={edit} onRetry={() => refresh()} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      {panel?.kind === 'transaction' && <TransactionSheet type={panel.type} transaction={panel.transaction} categories={categories.data || []} categoriesLoading={categories.loading} categoriesError={categories.error} closing={Boolean(panel.closing)} onClose={closePanel} onRequestClose={requestPanelClose} onSaved={(message) => { panel.afterSave?.(); requestPanelClose(); refresh(message) }} />}
+      {panel?.kind === 'transaction' && <TransactionSheet wallets={wallets.data || []} walletsLoading={wallets.loading} walletsError={wallets.error} type={panel.type} transaction={panel.transaction} categories={categories.data || []} categoriesLoading={categories.loading} categoriesError={categories.error} closing={Boolean(panel.closing)} onClose={closePanel} onRequestClose={requestPanelClose} onSaved={(message) => { panel.afterSave?.(); requestPanelClose(); refresh(message) }} />}
+      {panel?.kind === 'wallets' && <WalletsSheet wallets={wallets.data || []} loading={wallets.loading} error={wallets.error} closing={Boolean(panel.closing)} onClose={closePanel} onRequestClose={requestPanelClose} onChanged={refresh} onRetry={() => refresh()} />}
       {panel?.kind === 'categories' && <CategoriesSheet categories={categories.data || []} loading={categories.loading} error={categories.error} closing={Boolean(panel.closing)} onClose={closePanel} onRequestClose={requestPanelClose} onChanged={refresh} onRetry={() => refresh()} />}
     </AppLayout>
   )

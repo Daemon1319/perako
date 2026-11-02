@@ -1,5 +1,6 @@
 one:
   user: one
+  wallet: one
   category: one
   amount: 150.00
   date: 2026-11-01
@@ -8,6 +9,7 @@ one:
 
 two:
   user: two
+  wallet: two
   category: two
   amount: 30.00
   date: 2026-11-01
@@ -16,6 +18,7 @@ two:
 
 earlier:
   user: one
+  wallet: one
   amount: 10.00
   date: 2026-10-01
   description: Earlier expense
@@ -23,6 +26,7 @@ earlier:
 
 later:
   user: one
+  wallet: one
   amount: 20.00
   date: 2026-12-01
   description: Later expense

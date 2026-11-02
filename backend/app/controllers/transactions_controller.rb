@@ -16,6 +16,7 @@ class TransactionsController < ApplicationController
     transactions = current_user.transactions
       .by_type(params[:transaction_type])
       .by_category(params[:category_id])
+      .then { |scope| params[:wallet_id].present? ? scope.where(wallet_id: params[:wallet_id]) : scope }
       .between_dates(start_date, end_date)
       .order(date: :desc, id: :desc)
 
@@ -29,7 +30,7 @@ class TransactionsController < ApplicationController
 
     render json: {
       transactions: transactions.as_json(
-        only: [ :id, :amount, :date, :description, :transaction_type, :category_id ]),
+        only: [ :id, :amount, :date, :description, :transaction_type, :category_id, :wallet_id ]),
       pagination: {
         page: page,
         per_page: per_page,
@@ -42,8 +43,8 @@ class TransactionsController < ApplicationController
   def create
     transaction = current_user.transactions.new(transaction_params)
 
-    if transaction.save
-      render json: transaction.as_json(only: [ :id, :amount, :date, :description, :transaction_type, :category_id ]), status: :created
+    if WalletTransaction.call(current_user, transaction)
+      render json: transaction.as_json(only: [ :id, :amount, :date, :description, :transaction_type, :category_id, :wallet_id ]), status: :created
     else
       render json: { errors: transaction.errors.full_messages }, status: :unprocessable_entity
     end
@@ -52,8 +53,8 @@ class TransactionsController < ApplicationController
   def update
     transaction = current_user.transactions.find(params[:id])
 
-    if transaction.update(transaction_params)
-      render json: transaction.as_json(only: [ :id, :amount, :date, :description, :transaction_type, :category_id ])
+    if WalletTransaction.call(current_user, transaction, transaction_params)
+      render json: transaction.as_json(only: [ :id, :amount, :date, :description, :transaction_type, :category_id, :wallet_id ])
     else
       render json: { errors: transaction.errors.full_messages }, status: :unprocessable_entity
     end
@@ -62,13 +63,16 @@ class TransactionsController < ApplicationController
   def destroy
     transaction = current_user.transactions.find(params[:id])
 
-    transaction.destroy!
-    head :no_content
+    if WalletTransaction.call(current_user, transaction, destroy: true)
+      head :no_content
+    else
+      render json: { errors: transaction.errors.full_messages }, status: :unprocessable_entity
+    end
   end
 
   private
 
   def transaction_params
-    params.require(:transaction).permit(:amount, :date, :description, :transaction_type, :category_id)
+    params.require(:transaction).permit(:amount, :date, :description, :transaction_type, :category_id, :wallet_id)
   end
 end
