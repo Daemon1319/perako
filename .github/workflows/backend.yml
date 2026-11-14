@@ -54,12 +54,13 @@ jobs:
     permissions:
       contents: read
       id-token: write
+      packages: write
     concurrency:
       group: perako-backend-production
       cancel-in-progress: false
     env:
-      REGISTRY_NAME: perako1319
-      REGISTRY_SERVER: perako1319-h5f3h6h4azg6f4c5.azurecr.io
+      REGISTRY_SERVER: ghcr.io
+      IMAGE_NAME: ghcr.io/daemon1319/perako-api
       RESOURCE_GROUP: perako-rg
       CONTAINER_APP: perako-api
     steps:
@@ -70,21 +71,44 @@ jobs:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-      - name: Sign in to the container registry
-        run: az acr login --name "$REGISTRY_NAME" --resource-group "$RESOURCE_GROUP"
+      - name: Check registry pull credential
+        env:
+          GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
+        run: |
+          if [ -z "$GHCR_PULL_TOKEN" ]; then
+            echo "::error::Add the GHCR_PULL_TOKEN repository secret with read:packages permission before deploying."
+            exit 1
+          fi
+      - name: Sign in to GitHub Container Registry
+        env:
+          GHCR_PUSH_TOKEN: ${{ github.token }}
+          GHCR_USERNAME: ${{ github.actor }}
+        run: printf '%s' "$GHCR_PUSH_TOKEN" | docker login "$REGISTRY_SERVER" --username "$GHCR_USERNAME" --password-stdin
       - name: Build and push the backend image
         run: |
-          image="$REGISTRY_SERVER/perako-api:$GITHUB_SHA"
-          docker build --tag "$image" .
+          image="$IMAGE_NAME:$GITHUB_SHA"
+          docker build --tag "$image" \
+            --label "org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
+            --label "org.opencontainers.image.revision=$GITHUB_SHA" .
           docker push "$image"
       - name: Deploy the image
+        env:
+          GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
+          GHCR_USERNAME: ${{ github.repository_owner }}
         run: |
           az extension add --name containerapp --upgrade --yes
+          az containerapp registry set \
+            --name "$CONTAINER_APP" \
+            --resource-group "$RESOURCE_GROUP" \
+            --server "$REGISTRY_SERVER" \
+            --username "$GHCR_USERNAME" \
+            --password "$GHCR_PULL_TOKEN" \
+            --output none
           az containerapp update \
             --name "$CONTAINER_APP" \
             --resource-group "$RESOURCE_GROUP" \
             --container-name perako-api \
-            --image "$REGISTRY_SERVER/perako-api:$GITHUB_SHA" \
+            --image "$IMAGE_NAME:$GITHUB_SHA" \
             --output none
       - name: Check backend health
         run: |
