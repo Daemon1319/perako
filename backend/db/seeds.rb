@@ -7,3 +7,6 @@
 #   ["Action", "Comedy", "Drama", "Horror"].each do |genre_name|
 #     MovieGenre.find_or_create_by!(name: genre_name)
 #   end
+
+# Optional demo data is restricted to the local Docker development database.
+require_relative "seeds/demo" if Rails.env.development?
