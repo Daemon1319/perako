@@ -104,12 +104,7 @@ jobs:
             --username "$GHCR_USERNAME" \
             --password "$GHCR_PULL_TOKEN" \
             --output none
-          az containerapp update \
-            --name "$CONTAINER_APP" \
-            --resource-group "$RESOURCE_GROUP" \
-            --container-name perako-api \
-            --image "$IMAGE_NAME:$GITHUB_SHA" \
-            --output none
+          python3 script/deploy_azure.py --image "$IMAGE_NAME:$GITHUB_SHA"
       - name: Check backend health
         run: |
           app_host=$(az containerapp show \
