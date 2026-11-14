@@ -1,15 +1,18 @@
 import { ArrowDownLeft, ArrowUpRight, Wallet } from 'lucide-react'
 import AnimatedAmount from './AnimatedAmount'
 
-export default function SummaryCards({ summary, loading = false, compact = false }) {
+export default function SummaryCards({ summary, loading = false, compact = false, transfers = false }) {
   if (compact) {
     return (
-      <div className="summary-compact" aria-busy={loading}>
-        {[
+      <div className="summary-compact" style={transfers ? { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' } : undefined} aria-busy={loading}>
+        {(transfers ? [
+          ['Transferred', summary?.amount, 'text-teal-700'],
+          ['Fees', summary?.fees, 'text-stone-900'],
+        ] : [
           ['Income', summary?.income, 'text-teal-700'],
           ['Expenses', summary?.expenses, 'text-stone-900'],
           ['Net income', summary?.net_income, Number(summary?.net_income) < 0 ? 'text-rose-600' : 'text-teal-800'],
-        ].map(([label, amount, color]) => (
+        ]).map(([label, amount, color]) => (
           <div key={label} className="min-w-0">
             <p className="text-[11px] font-medium text-stone-500">{label}</p>
             {loading && !summary ? <div className="skeleton mt-2 h-5 w-20 max-w-full" /> : <p className={`mt-1.5 break-words text-[15px] font-semibold tracking-tight tabular-nums ${color}`}><AnimatedAmount value={amount} /></p>}

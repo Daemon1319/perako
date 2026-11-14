@@ -23,12 +23,17 @@ class TransactionsController < ApplicationController
     page = [ params[:page].to_i, 1 ].max
     per_page = 10
     total_count = transactions.count
+    amounts = transactions.reorder(nil).group(:transaction_type).sum(:amount)
+    income = amounts.fetch("income", 0).to_d
+    expenses = amounts.fetch("expense", 0).to_d
+    summary = { income: income.to_s("F"), expenses: expenses.to_s("F"), net_income: (income - expenses).to_s("F") }
 
     transactions = transactions
       .limit(per_page)
       .offset((page - 1) * per_page)
 
     render json: {
+      summary: summary,
       transactions: transactions.as_json(
         only: [ :id, :amount, :date, :description, :transaction_type, :category_id, :wallet_id, :transfer_id ]),
       pagination: {

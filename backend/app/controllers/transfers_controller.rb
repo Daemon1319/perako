@@ -17,7 +17,8 @@ class TransfersController < ApplicationController
     end
     page = [ params[:page].to_i, 1 ].max
     count = scope.count
-    render json: { transfers: scope.order(date: :desc, id: :desc).limit(10).offset((page - 1) * 10).map { |item| transfer_json(item) },
+    summary = { amount: scope.sum(:amount).to_d.to_s("F"), fees: scope.sum(:fee).to_d.to_s("F") }
+    render json: { summary: summary, transfers: scope.order(date: :desc, id: :desc).limit(10).offset((page - 1) * 10).map { |item| transfer_json(item) },
       pagination: { page: page, total_count: count, total_pages: (count / 10.0).ceil } }
   end
 
