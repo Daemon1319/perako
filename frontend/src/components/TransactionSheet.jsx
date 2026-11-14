@@ -1,25 +1,35 @@
-import { useState } from 'react'
-import { ArrowDownLeft, ArrowUpRight, ChevronDown, Trash2 } from 'lucide-react'
+import { useId, useState } from 'react'
+import { ArrowDownLeft, ArrowUpRight, ChevronDown } from 'lucide-react'
 import { api } from '../lib/api'
 import { money, today } from '../lib/format'
 import Sheet from './Sheet'
+import BalancePreview from './BalancePreview'
+import { transactionPreview } from '../lib/balancePreview'
+import DiscardChangesDialog from './DiscardChangesDialog'
+import { useUnsavedChanges } from '../hooks/useUnsavedChanges'
+import ConfirmDeleteDialog from './ConfirmDeleteDialog'
+import TransactionActions from './TransactionActions'
 import { ErrorNotice, Spinner } from './Feedback'
 
 export default function TransactionSheet({ wallets, walletsLoading, walletsError, type, transaction, categories, categoriesLoading, categoriesError, onClose, onRequestClose, closing, onSaved }) {
   const editing = Boolean(transaction)
   const income = type === 'income'
-  const [fields, setFields] = useState(() => ({
+  const [initialFields] = useState(() => ({
     amount: transaction?.amount || '',
     wallet_id: transaction?.wallet_id ? String(transaction.wallet_id) : wallets.length === 1 ? String(wallets[0].id) : '',
     date: transaction?.date || today(),
     category_id: transaction?.category_id ? String(transaction.category_id) : '',
     description: transaction?.description || '',
   }))
+  const [fields, setFields] = useState(initialFields)
+  const formId = useId()
+  const guard = useUnsavedChanges(Object.keys(fields).some((key) => String(fields[key]) !== String(initialFields[key])))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const options = categories.filter((category) => category.transaction_type === type)
   const Icon = income ? ArrowDownLeft : ArrowUpRight
+  const balanceChanges = walletsLoading || walletsError ? [] : transactionPreview(wallets, fields, type, transaction)
 
   function change(event) {
     setFields({ ...fields, [event.target.name]: event.target.value })
@@ -53,6 +63,7 @@ export default function TransactionSheet({ wallets, walletsLoading, walletsError
     setError('')
     try {
       await api(`/transactions/${transaction.id}`, { method: 'DELETE' })
+      setConfirmDelete(false)
       onSaved('Transaction deleted')
     } catch (error) {
       setError(error.message)
@@ -61,8 +72,8 @@ export default function TransactionSheet({ wallets, walletsLoading, walletsError
   }
 
   return (
-    <Sheet title={`${editing ? 'Edit' : 'Add'} ${type}`} subtitle={income ? 'A little more coming your way.' : 'Keep the little things accounted for.'} onClose={onClose} onRequestClose={onRequestClose} closing={closing} busy={busy}>
-      <form onSubmit={save}>
+    <Sheet footer={<div className="flex gap-3"><button type="button" className="btn-secondary flex-1" disabled={busy} onClick={() => guard.request(onRequestClose)}>Cancel</button><button className="btn-primary flex-[2]" form={formId} type="submit" disabled={busy || walletsLoading || Boolean(walletsError) || !wallets.length}>{busy ? <Spinner /> : editing ? 'Save changes' : `Save ${type}`}</button></div>} title={`${editing ? 'Edit' : 'Add'} ${type}`} subtitle={income ? 'A little more coming your way.' : 'Keep the little things accounted for.'} onClose={onClose} onRequestClose={() => guard.request(onRequestClose)} closing={closing} busy={busy} actions={editing ? <TransactionActions disabled={busy} onDelete={() => { setError(''); setConfirmDelete(true) }} /> : null}>
+      <form id={formId} onSubmit={save}>
         <fieldset disabled={busy}>
           <ErrorNotice>{error}</ErrorNotice>
           <div className="amount-entry">
@@ -84,6 +95,7 @@ export default function TransactionSheet({ wallets, walletsLoading, walletsError
               {walletsError && <span className="mt-2 block text-xs text-rose-600">{walletsError}</span>}
               {!walletsLoading && !walletsError && !wallets.length && <span className="mt-2 block text-xs text-stone-500">Create a wallet from the menu first.</span>}
             </label>
+            <BalancePreview changes={balanceChanges} />
             <label className="field-label">Date<input className="field mt-2" name="date" type="date" max={today()} required value={fields.date} onChange={change} /></label>
             <label className="field-label">Category <span className="font-normal text-stone-400">· optional</span>
               <div className="relative mt-2">
@@ -99,20 +111,14 @@ export default function TransactionSheet({ wallets, walletsLoading, walletsError
             <label className="field-label">Description <span className="font-normal text-stone-400">· optional</span><textarea className="field mt-2 min-h-24 resize-y" name="description" placeholder={income ? 'Where did it come from?' : 'What was it for?'} rows={3} value={fields.description} onChange={change} /></label>
           </div>
 
-          <button className="btn-primary mt-4 w-full" type="submit" disabled={walletsLoading || Boolean(walletsError) || !wallets.length}>{busy ? <Spinner /> : editing ? 'Save changes' : `Save ${type}`}</button>
-          {editing && !confirmDelete && <button type="button" className="mx-auto mt-4 flex items-center gap-2 px-3 py-2 text-sm font-medium text-rose-600" onClick={() => setConfirmDelete(true)}><Trash2 size={15} /> Delete transaction</button>}
-          {confirmDelete && (
-            <div className="mt-4 rounded-2xl border border-rose-100 bg-rose-50 p-4">
-              <p className="text-sm font-medium text-rose-900">Delete this transaction?</p>
-              <p className="mt-1 text-xs leading-5 text-rose-800/75">This cannot be undone.</p>
-              <div className="mt-3 flex gap-3">
-                <button className="btn-danger flex-1" type="button" onClick={remove}>Delete</button>
-                <button className="btn-secondary flex-1" type="button" onClick={() => setConfirmDelete(false)}>Keep it</button>
-              </div>
-            </div>
-          )}
+
         </fieldset>
       </form>
+      {confirmDelete && <ConfirmDeleteDialog title={`Delete this ${type}?`} error={error} busy={busy} onCancel={() => { setConfirmDelete(false); setError('') }} onConfirm={remove}>
+        <p className="font-semibold text-stone-800">{money(transaction.amount)}{transaction.description ? ` · ${transaction.description}` : ''}</p>
+        <p>This permanently removes the transaction and updates its wallet balance.</p>
+      </ConfirmDeleteDialog>}
+      <DiscardChangesDialog guard={guard} />
     </Sheet>
   )
 }

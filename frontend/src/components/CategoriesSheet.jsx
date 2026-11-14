@@ -1,7 +1,10 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { ArrowDownLeft, ArrowUpRight, ChevronRight, FolderOpen, Plus, Trash2 } from 'lucide-react'
 import { api } from '../lib/api'
 import Sheet from './Sheet'
+import DiscardChangesDialog from './DiscardChangesDialog'
+import { useUnsavedChanges } from '../hooks/useUnsavedChanges'
+import ConfirmDeleteDialog from './ConfirmDeleteDialog'
 import { ErrorNotice, ErrorState, Spinner } from './Feedback'
 
 export default function CategoriesSheet({ categories, loading, error: loadError, onClose, onRequestClose, closing, onChanged, onRetry }) {
@@ -11,6 +14,8 @@ export default function CategoriesSheet({ categories, loading, error: loadError,
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const formId = useId()
+  const guard = useUnsavedChanges(Boolean(editor) && name !== (editor?.name || ''))
   const options = categories.filter((category) => category.transaction_type === type)
 
   function openEditor(category = null) {
@@ -62,32 +67,18 @@ export default function CategoriesSheet({ categories, loading, error: loadError,
   }
 
   return (
-    <Sheet title="Your categories" subtitle="A place for every kind of money." onClose={onClose} onRequestClose={onRequestClose} closing={closing} busy={busy}>
+    <Sheet footer={editor && <div className="flex gap-3"><button className="btn-secondary flex-1" type="button" disabled={busy} onClick={() => guard.request(() => { setEditor(null); setError('') })}>Cancel</button><button className="btn-primary flex-[2]" form={formId} type="submit" disabled={busy}>{busy ? <Spinner /> : 'Save category'}</button></div>} title="Your categories" subtitle="A place for every kind of money." onClose={onClose} onRequestClose={() => guard.request(onRequestClose)} closing={closing} busy={busy}>
       <div className="segmented mb-5" aria-label="Category type">
-        <button type="button" disabled={busy} onClick={() => selectType('expense')} aria-pressed={type === 'expense'} className={type === 'expense' ? 'active' : ''}><ArrowUpRight size={15} /> Expenses</button>
-        <button type="button" disabled={busy} onClick={() => selectType('income')} aria-pressed={type === 'income'} className={type === 'income' ? 'active' : ''}><ArrowDownLeft size={15} /> Income</button>
+        <button type="button" disabled={busy} onClick={() => guard.request(() => selectType('expense'))} aria-pressed={type === 'expense'} className={type === 'expense' ? 'active' : ''}><ArrowUpRight size={15} /> Expenses</button>
+        <button type="button" disabled={busy} onClick={() => guard.request(() => selectType('income'))} aria-pressed={type === 'income'} className={type === 'income' ? 'active' : ''}><ArrowDownLeft size={15} /> Income</button>
       </div>
 
       {editor ? (
-        <form onSubmit={save} className="space-y-4">
+        <form id={formId} onSubmit={save} className="space-y-4">
           <p className="eyebrow">{editor.id ? 'EDIT' : 'NEW'} {type.toUpperCase()} CATEGORY</p>
           <ErrorNotice>{error}</ErrorNotice>
           <label className="field-label">Category name<input className="field mt-2" required autoFocus placeholder={type === 'expense' ? 'e.g. Food & drinks' : 'e.g. Salary'} value={name} onChange={(event) => setName(event.target.value)} disabled={busy} /></label>
-          <div className="flex gap-3">
-            <button className="btn-secondary flex-1" type="button" disabled={busy} onClick={() => { setEditor(null); setError('') }}>Cancel</button>
-            <button className="btn-primary flex-1" type="submit" disabled={busy}>{busy ? <Spinner /> : 'Save category'}</button>
-          </div>
-          {editor.id && !confirmDelete && <button type="button" className="mx-auto flex items-center gap-2 py-3 text-sm text-rose-600" disabled={busy} onClick={() => setConfirmDelete(true)}><Trash2 size={15} /> Delete category</button>}
-          {confirmDelete && (
-            <div className="rounded-2xl border border-rose-100 bg-rose-50 p-4">
-              <p className="text-sm font-medium text-rose-900">Delete “{editor.name}”?</p>
-              <p className="mt-1 text-xs leading-5 text-rose-800/75">Your transactions will stay. They’ll appear as Uncategorized.</p>
-              <div className="mt-3 flex gap-3">
-                <button className="btn-danger flex-1" type="button" disabled={busy} onClick={remove}>Delete category</button>
-                <button className="btn-secondary flex-1" type="button" disabled={busy} onClick={() => setConfirmDelete(false)}>Keep it</button>
-              </div>
-            </div>
-          )}
+          {editor.id && <button type="button" className="mx-auto flex items-center gap-2 py-3 text-sm text-rose-600" disabled={busy} onClick={() => { setError(''); setConfirmDelete(true) }}><Trash2 size={15} /> Delete category</button>}
         </form>
       ) : (
         <>
@@ -104,6 +95,10 @@ export default function CategoriesSheet({ categories, loading, error: loadError,
           <p className="mt-4 text-center text-xs text-stone-400">Tap a category to rename or delete it.</p>
         </>
       )}
+      {confirmDelete && editor && <ConfirmDeleteDialog title={`Delete “${editor.name}”?`} error={error} busy={busy} onCancel={() => { setConfirmDelete(false); setError('') }} onConfirm={remove} confirmLabel="Delete category">
+        <p>Your transactions will stay. They will appear as Uncategorized.</p>
+      </ConfirmDeleteDialog>}
+      <DiscardChangesDialog guard={guard} />
     </Sheet>
   )
 }

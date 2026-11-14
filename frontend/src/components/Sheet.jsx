@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef } from 'react'
 import { X } from 'lucide-react'
 
-export default function Sheet({ title, subtitle, children, onClose, onRequestClose, closing = false, busy = false }) {
+export default function Sheet({ title, subtitle, children, onClose, onRequestClose, closing = false, busy = false, actions, footer }) {
   const ref = useRef(null)
   const titleId = useId()
 
@@ -88,11 +88,15 @@ export default function Sheet({ title, subtitle, children, onClose, onRequestClo
           <h2 id={titleId} className="text-xl font-semibold tracking-tight">{title}</h2>
           {subtitle && <p className="mt-1 text-sm text-stone-500">{subtitle}</p>}
         </div>
+        <div className="flex shrink-0 items-center gap-1">
+        {actions}
         <button type="button" className="icon-button -mr-2" onClick={requestClose} disabled={busy || closing} aria-label="Close panel">
           <X size={21} />
         </button>
+        </div>
       </header>
       <div className="sheet-body">{children}</div>
+      {footer && <footer className="sheet-footer">{footer}</footer>}
     </dialog>
   )
 }

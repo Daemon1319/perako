@@ -1,8 +1,11 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { ChevronRight, FolderOpen, Plus, Trash2 } from 'lucide-react'
 import { money } from '../lib/format'
 import { api } from '../lib/api'
 import Sheet from './Sheet'
+import DiscardChangesDialog from './DiscardChangesDialog'
+import { useUnsavedChanges } from '../hooks/useUnsavedChanges'
+import ConfirmDeleteDialog from './ConfirmDeleteDialog'
 import { ErrorNotice, ErrorState, Spinner } from './Feedback'
 
 export default function WalletsSheet({ wallets, loading, error: loadError, onClose, onRequestClose, closing, onChanged, onRetry }) {
@@ -11,6 +14,8 @@ export default function WalletsSheet({ wallets, loading, error: loadError, onClo
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const formId = useId()
+  const guard = useUnsavedChanges(Boolean(editor) && name !== (editor?.name || ''))
   const options = wallets
 
   function openEditor(wallet = null) {
@@ -55,27 +60,13 @@ export default function WalletsSheet({ wallets, loading, error: loadError, onClo
   }
 
   return (
-    <Sheet title="Your wallets" subtitle="Choose where your money is held." onClose={onClose} onRequestClose={onRequestClose} closing={closing} busy={busy}>
+    <Sheet footer={editor && <div className="flex gap-3"><button className="btn-secondary flex-1" type="button" disabled={busy} onClick={() => guard.request(() => { setEditor(null); setError('') })}>Cancel</button><button className="btn-primary flex-[2]" form={formId} type="submit" disabled={busy}>{busy ? <Spinner /> : 'Save wallet'}</button></div>} title="Your wallets" subtitle="Choose where your money is held." onClose={onClose} onRequestClose={() => guard.request(onRequestClose)} closing={closing} busy={busy}>
       {editor ? (
-        <form onSubmit={save} className="space-y-4">
+        <form id={formId} onSubmit={save} className="space-y-4">
           <p className="eyebrow">{editor.id ? 'EDIT' : 'NEW'} WALLET</p>
           <ErrorNotice>{error}</ErrorNotice>
           <label className="field-label">Wallet name<input className="field mt-2" required autoFocus placeholder="e.g. Cash or GCash" maxLength={100} value={name} onChange={(event) => setName(event.target.value)} disabled={busy} /></label>
-          <div className="flex gap-3">
-            <button className="btn-secondary flex-1" type="button" disabled={busy} onClick={() => { setEditor(null); setError('') }}>Cancel</button>
-            <button className="btn-primary flex-1" type="submit" disabled={busy}>{busy ? <Spinner /> : 'Save wallet'}</button>
-          </div>
-          {editor.id && !confirmDelete && <button type="button" className="mx-auto flex items-center gap-2 py-3 text-sm text-rose-600" disabled={busy} onClick={() => setConfirmDelete(true)}><Trash2 size={15} /> Delete wallet</button>}
-          {confirmDelete && (
-            <div className="rounded-2xl border border-rose-100 bg-rose-50 p-4">
-              <p className="text-sm font-medium text-rose-900">Delete “{editor.name}”?</p>
-              <p className="mt-1 text-xs leading-5 text-rose-800/75">Only empty wallets can be deleted.</p>
-              <div className="mt-3 flex gap-3">
-                <button className="btn-danger flex-1" type="button" disabled={busy} onClick={remove}>Delete wallet</button>
-                <button className="btn-secondary flex-1" type="button" disabled={busy} onClick={() => setConfirmDelete(false)}>Keep it</button>
-              </div>
-            </div>
-          )}
+          {editor.id && <button type="button" className="mx-auto flex items-center gap-2 py-3 text-sm text-rose-600" disabled={busy} onClick={() => { setError(''); setConfirmDelete(true) }}><Trash2 size={15} /> Delete wallet</button>}
         </form>
       ) : (
         <>
@@ -92,6 +83,10 @@ export default function WalletsSheet({ wallets, loading, error: loadError, onClo
           <p className="mt-4 text-center text-xs text-stone-400">Tap a wallet to rename or delete it.</p>
         </>
       )}
+      {confirmDelete && editor && <ConfirmDeleteDialog title={`Delete “${editor.name}”?`} error={error} busy={busy} onCancel={() => { setConfirmDelete(false); setError('') }} onConfirm={remove} confirmLabel="Delete wallet">
+        <p>Only wallets without transactions or transfers can be deleted.</p>
+      </ConfirmDeleteDialog>}
+      <DiscardChangesDialog guard={guard} />
     </Sheet>
   )
 }

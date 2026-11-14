@@ -1,5 +1,5 @@
 import { Fragment, useState } from 'react'
-import { ArrowDownLeft, ArrowUpRight, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, ReceiptText } from 'lucide-react'
+import { ArrowDownLeft, ArrowUpRight, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, ReceiptText, X } from 'lucide-react'
 import { useResource } from '../hooks/useResource'
 import { dateLabel, money, monthLabel, monthRange, shiftMonth, today } from '../lib/format'
 import TransfersList from '../components/TransfersList'
@@ -27,6 +27,21 @@ export default function TransactionsPage({ onTransfer, wallets, categories, cate
   const transactions = resource.data?.transactions || []
   const pagination = resource.data?.pagination
 
+  const activeFilters = []
+  if (allTime || month !== currentMonth) activeFilters.push({ key: 'period', label: allTime ? 'All time' : monthLabel(month, true), clear: () => { setAllTime(false); setMonth(currentMonth) } })
+  if (type) activeFilters.push({ key: 'type', label: type === 'expense' ? 'Expenses' : type === 'income' ? 'Income' : 'Transfers', clear: () => { setType(''); setCategoryId('') } })
+  if (walletId) activeFilters.push({ key: 'wallet', label: wallets.find((wallet) => String(wallet.id) === walletId)?.name || 'Selected wallet', clear: () => setWalletId('') })
+  if (selectedCategory) activeFilters.push({ key: 'category', label: categoryOptions.find((category) => String(category.id) === selectedCategory)?.name, clear: () => setCategoryId('') })
+
+  function clearFilters() {
+    setAllTime(false)
+    setMonth(currentMonth)
+    setType('')
+    setCategoryId('')
+    setWalletId('')
+    setPage(1)
+  }
+
   function selectMonth(next) {
     if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(next) || next > currentMonth) return
     setMonth(next)
@@ -51,21 +66,26 @@ export default function TransactionsPage({ onTransfer, wallets, categories, cate
         <button type="button" className={`all-time-button ${allTime ? 'active' : ''}`} onClick={() => { setAllTime(!allTime); setPage(1) }}>{allTime ? 'Monthly' : 'All time'}</button>
       </div>
 
-      {!resource.error && <SummaryCards summary={resource.data?.summary} loading={resource.loading} compact transfers={type === 'transfers'} />}
-      <p className="mb-6 mt-2 text-[10px] text-stone-400">Totals for {allTime ? 'all time' : monthLabel(month)} · matching your filters across all pages</p>
-
-      <div className="segmented mb-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }} aria-label="Transaction type">
+      <div className="filter-panel">
+        <div className="mb-3 flex items-center justify-between"><h2 className="text-xs font-semibold text-stone-600">Filter transactions</h2><button type="button" className="clear-filters" disabled={!activeFilters.length} onClick={clearFilters}>Clear all</button></div>
+      <div className="segmented transaction-type-tabs mb-4" aria-label="Transaction type">
         {[['', 'All'], ['income', 'Income'], ['expense', 'Expenses'], ['transfers', 'Transfers']].map(([value, label]) => <button key={value} type="button" aria-pressed={type === value} className={type === value ? 'active' : ''} onClick={() => { setType(value); setCategoryId(''); setPage(1) }}>{label}</button>)}
       </div>
 
-      <label className="mb-3 block"><span className="sr-only">Filter by wallet</span><select className="filter-select" value={walletId} onChange={(event) => { setWalletId(event.target.value); setPage(1) }}><option value="">All wallets</option>{wallets.map((wallet) => <option key={wallet.id} value={wallet.id}>{wallet.name}</option>)}</select></label>
-      {type !== 'transfers' && <div className="relative mb-6">
-        <select className="filter-select" aria-label="Filter by category" value={selectedCategory} onChange={(event) => { setCategoryId(event.target.value); setPage(1) }}>
-          <option value="">All categories</option>
-          {categoryOptions.map((category) => <option key={category.id} value={category.id}>{category.name}{!type ? ` · ${category.transaction_type}` : ''}</option>)}
-        </select>
-        <ChevronDown size={15} className="pointer-events-none absolute right-3 top-3 text-stone-400" />
-      </div>}
+      <div className={`filter-fields ${type === 'transfers' ? 'single' : ''}`}>
+        <label className="field-label">Wallet<select className="filter-select mt-2" aria-label="Filter by wallet" value={walletId} onChange={(event) => { setWalletId(event.target.value); setPage(1) }}><option value="">All wallets</option>{wallets.map((wallet) => <option key={wallet.id} value={wallet.id}>{wallet.name}</option>)}</select></label>
+        {type !== 'transfers' && <label className="field-label">Category
+          <div className="relative mt-2"><select className="filter-select" aria-label="Filter by category" value={selectedCategory} onChange={(event) => { setCategoryId(event.target.value); setPage(1) }}>
+            <option value="">All categories</option>
+            {categoryOptions.map((category) => <option key={category.id} value={category.id}>{category.name}{!type ? ` · ${category.transaction_type}` : ''}</option>)}
+          </select><ChevronDown size={15} className="pointer-events-none absolute right-3 top-3 text-stone-400" /></div>
+        </label>}
+      </div>
+      {activeFilters.length > 0 && <div className="filter-chips" aria-label="Active filters">{activeFilters.map((filter) => <button className="filter-chip" type="button" key={filter.key} aria-label={`Remove ${filter.label} filter`} onClick={() => { filter.clear(); setPage(1) }}><span>{filter.label}</span><X size={13} aria-hidden="true" /></button>)}</div>}
+      </div>
+
+      {!resource.error && <SummaryCards summary={resource.data?.summary} loading={resource.loading} compact transfers={type === 'transfers'} />}
+      <p className="mb-5 mt-2 text-[10px] text-stone-400">Totals for {allTime ? 'all time' : monthLabel(month)} · matching your filters across all pages</p>
 
       {type === 'transfers' ? <TransfersList resource={resource} page={page} onPage={setPage} wallets={wallets} onOpen={onTransfer} onRetry={onRetry} /> : <>
       {resource.error ? <ErrorState error={resource.error} onRetry={onRetry} /> : resource.loading ? (

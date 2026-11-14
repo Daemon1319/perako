@@ -2,6 +2,7 @@ import { CalendarDays } from 'lucide-react'
 import { useResource } from '../hooks/useResource'
 import { money, monthLabel, today } from '../lib/format'
 import SummaryCards from '../components/SummaryCards'
+import CategoryBreakdown from '../components/CategoryBreakdown'
 import { ErrorState } from '../components/Feedback'
 
 export default function HomePage({ revision, onRetry, wallets, onWallets }) {
@@ -24,6 +25,7 @@ export default function HomePage({ revision, onRetry, wallets, onWallets }) {
         {wallets.error ? <ErrorState error={wallets.error} onRetry={onRetry} /> : wallets.loading ? <div className="skeleton h-20 rounded-2xl" /> : wallets.data?.length ? <div className="space-y-3">{wallets.data.map((wallet) => <div key={wallet.id} className="flex items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-white p-4"><span className="min-w-0 truncate text-sm">{wallet.name}</span><span className="text-sm font-semibold tabular-nums text-teal-700">{money(wallet.balance)}</span></div>)}</div> : <button type="button" className="btn-secondary w-full" onClick={onWallets}>Create your first wallet</button>}
         <p className="mt-2 text-xs text-stone-400">Current balances across all recorded dates.</p>
       </div>
+      {!summary.error && <CategoryBreakdown summary={summary.data} loading={summary.loading} month={monthLabel(month)} />}
     </section>
   )
 }

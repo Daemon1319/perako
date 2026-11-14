@@ -94,7 +94,7 @@ input, select, textarea { scroll-margin-block: 24px; }
 .sheet[open] { display: flex; flex-direction: column; }
 .sheet::backdrop { background: #162d2565; backdrop-filter: blur(3px); }
 .sheet-handle { flex-shrink: 0; width: 33px; height: 4px; margin: 12px auto; border-radius: 4px; background: #e0e3d8; }
-.sheet > header { flex-shrink: 0; }
+.sheet > header { position: relative; z-index: 2; flex-shrink: 0; }
 .sheet-body { min-height: 0; scroll-padding-block: 24px; padding: 0 24px max(24px,env(safe-area-inset-bottom)); overflow-y: auto; overscroll-behavior: contain; }
 .amount-entry { margin-bottom: 23px; padding: 20px; border: 1px solid #e8ebdf; border-radius: 16px; background: #f6f8ef; }
 .type-pill { display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border-radius: 6px; font-size: 10px; font-weight: 600; }
@@ -148,3 +148,36 @@ button:not(:disabled):active, .nav-tab:active { scale: .97; }
   *, *::before, *::after { animation-delay: 0ms !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
   button:not(:disabled):active, .nav-tab:active { scale: 1; }
 }
+
+/* Separate top-layer confirmation above the open editor sheet. */
+.confirm-dialog { position: fixed; inset: 0; margin: auto; width: min(380px, calc(100% - 40px)); max-height: calc(100dvh - 48px); padding: 24px; overflow-y: auto; overscroll-behavior: contain; border: 1px solid #e7e9df; border-radius: 22px; background: #fffefa; color: #26352b; box-shadow: 0 20px 80px #14302140; }
+.confirm-dialog[open] { animation: confirm-enter .16s ease-out; }
+.confirm-dialog::backdrop { background: #162d2575; backdrop-filter: blur(3px); }
+@keyframes confirm-enter { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+.sheet-footer { flex-shrink: 0; padding: 14px 24px max(18px, env(safe-area-inset-bottom)); border-top: 1px solid #e8ebdf; background: #fffefa; }
+.filter-panel { margin-bottom: 20px; padding: 16px; border: 1px solid #e4e7dc; border-radius: 18px; background: #fffefa; }
+.clear-filters { min-height: 32px; padding: 4px 8px; color: #1c6553; font-size: 12px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.transaction-type-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.transaction-type-tabs button { min-width: 0; padding: 8px 3px; font-size: 11px; }
+.filter-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.filter-fields.single { grid-template-columns: minmax(0, 1fr); }
+.filter-fields .filter-select { min-width: 0; text-overflow: ellipsis; }
+.filter-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; }
+.filter-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; max-width: 100%; border: 1px solid #d9e7d9; border-radius: 999px; padding: 5px 10px; background: #edf7f2; color: #1c6553; font-size: 11px; }
+.filter-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.filter-chip svg { flex-shrink: 0; }
+@media (max-width: 359px) { .filter-panel { padding: 12px; } .filter-fields { grid-template-columns: minmax(0, 1fr); } .transaction-type-tabs button { font-size: 10px; } }
+
+.balance-preview { padding: 16px; border: 1px solid #dce9dd; border-radius: 14px; background: #f2f8f1; }
+.balance-preview.insufficient { border-color: #f2ccd3; background: #fff5f5; }
+.transaction-detail-amount { padding: 20px; border: 1px solid #e5eadd; border-radius: 16px; background: #f6f8ef; }
+.transaction-details { margin-block: 20px 4px; }
+.transaction-details > div { display: grid; grid-template-columns: 80px minmax(0, 1fr); gap: 16px; padding: 15px 0; border-bottom: 1px solid #edeee7; }
+.transaction-details dt { font-size: 12px; color: #858a80; }
+.transaction-details dd { overflow-wrap: anywhere; text-align: right; font-size: 14px; font-weight: 500; }
+.transaction-details .description { display: block; border-bottom: 0; }
+.transaction-details .description dd { margin-top: 8px; text-align: left; white-space: pre-wrap; font-weight: 400; line-height: 1.7; }
+.category-breakdown { padding: 20px; border: 1px solid #e4e7dc; border-radius: 18px; background: #fffefa; }
+.category-track { height: 6px; overflow: hidden; border-radius: 999px; background: #edf0e7; }
+.category-track > div { height: 100%; border-radius: inherit; background: #619c80; }

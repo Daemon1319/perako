@@ -7,6 +7,7 @@ import AppLayout from './components/AppLayout'
 import Brand from './components/Brand'
 import CategoriesSheet from './components/CategoriesSheet'
 import TransactionSheet from './components/TransactionSheet'
+import TransactionDetailsSheet from './components/TransactionDetailsSheet'
 import WalletsSheet from './components/WalletsSheet'
 import TransferSheet from './components/TransferSheet'
 import { api } from './lib/api'
@@ -55,7 +56,7 @@ function Workspace() {
       } catch (error) { setToast(error.message) }
       return
     }
-    setPanel({ kind: 'transaction', type: transaction.transaction_type, transaction, afterSave })
+    setPanel({ kind: 'transactionDetails', type: transaction.transaction_type, transaction, afterSave })
   }
 
   return (
@@ -67,6 +68,7 @@ function Workspace() {
       </Routes>
 
       {panel?.kind === 'transfer' && <TransferSheet transfer={panel.transfer} wallets={wallets.data || []} loading={wallets.loading} loadError={wallets.error} closing={Boolean(panel.closing)} onClose={closePanel} onRequestClose={requestPanelClose} onSaved={(message) => { requestPanelClose(); refresh(message) }} />}
+      {panel?.kind === 'transactionDetails' && <TransactionDetailsSheet transaction={panel.transaction} wallets={wallets.data || []} categories={categories.data || []} walletsLoading={wallets.loading} categoriesLoading={categories.loading} closing={Boolean(panel.closing)} onClose={closePanel} onRequestClose={requestPanelClose} onEdit={() => setPanel({ ...panel, kind: 'transaction' })} onSaved={(message) => { panel.afterSave?.(); requestPanelClose(); refresh(message) }} />}
       {panel?.kind === 'transaction' && <TransactionSheet wallets={wallets.data || []} walletsLoading={wallets.loading} walletsError={wallets.error} type={panel.type} transaction={panel.transaction} categories={categories.data || []} categoriesLoading={categories.loading} categoriesError={categories.error} closing={Boolean(panel.closing)} onClose={closePanel} onRequestClose={requestPanelClose} onSaved={(message) => { panel.afterSave?.(); requestPanelClose(); refresh(message) }} />}
       {panel?.kind === 'wallets' && <WalletsSheet wallets={wallets.data || []} loading={wallets.loading} error={wallets.error} closing={Boolean(panel.closing)} onClose={closePanel} onRequestClose={requestPanelClose} onChanged={refresh} onRetry={() => refresh()} />}
       {panel?.kind === 'categories' && <CategoriesSheet categories={categories.data || []} loading={categories.loading} error={categories.error} closing={Boolean(panel.closing)} onClose={closePanel} onRequestClose={requestPanelClose} onChanged={refresh} onRetry={() => refresh()} />}
