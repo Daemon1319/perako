@@ -1,7 +1,7 @@
 class UsersController < ApplicationController
   before_action :authenticate_user!, only: [ :me ]
   rate_limit to: 10, within: 1.hour, only: :create,
-    with: -> { render json: { error: "Too many signup attempts. Try again later." }, status: :too_many_requests }
+    with: -> { render_rate_limit_error(3600, "Too many signup attempts. Try again later.") }
 
   def create
     user = User.new(user_params)
